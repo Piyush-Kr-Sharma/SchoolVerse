@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const Teacher = require("../models/teacherSchema.js");
 const Subject = require("../models/subjectSchema.js");
+const Student = require("../models/studentSchema.js");
 
 const teacherRegister = async (req, res) => {
   const { name, email, password, role, school, teachSubject, teachSclass } =
@@ -211,6 +212,56 @@ const teacherAttendance = async (req, res) => {
   }
 };
 
+const teacherPostAssignment = async (req, res) => {
+  const { deadline, description, fileURL, subjectId, classId } = req.body;
+  try {
+    const students = await Student.find({ sclassName: classId });
+    if (!students || students.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No students found for the given class." });
+    }
+
+    // Prepare the assignment object
+    const assignment = {
+      deadline: new Date(deadline),
+      description,
+      file: fileURL,
+      subjectId,
+    };
+
+    // Add the assignment to each student's assignment field
+    const bulkOperations = students.map((student) => ({
+      updateOne: {
+        filter: { _id: student._id },
+        update: { $push: { assignments: assignment } },
+      },
+    }));
+
+    await Student.bulkWrite(bulkOperations);
+
+    res.status(200).json({
+      message: "Assignment added successfully to all students.",
+      assignment,
+    });
+  } catch (error) {
+    console.error("Error adding assignment:", error);
+    res.status(500).json({
+      message: "An error occurred while adding the assignment.",
+      error: error.message,
+    });
+  }
+};
+
+const teacherUploadFile = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded." });
+  }
+  // Construct the file URL
+  const fileURL = `${process.env.BASE_URL}/Teacher/uploadFile/${req.file.filename}`;
+  res.status(200).json({ fileURL, message: "File uploaded successfully." });
+};
+
 module.exports = {
   teacherRegister,
   teacherLogIn,
@@ -221,4 +272,6 @@ module.exports = {
   deleteTeachers,
   deleteTeachersByClass,
   teacherAttendance,
+  teacherPostAssignment,
+  teacherUploadFile,
 };

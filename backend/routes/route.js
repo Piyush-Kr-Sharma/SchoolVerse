@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const multer = require("multer");
 
 // const { adminRegister, adminLogIn, deleteAdmin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
 
@@ -7,6 +8,11 @@ const {
   adminLogIn,
   getAdminDetail,
 } = require("../controllers/admin-controller.js");
+const {
+  checkAndMarkAttendance,
+  getAttendanceByDate,
+  getAttendancePercentage,
+} = require("../controllers/attendance-controller.js");
 
 const {
   sclassCreate,
@@ -42,16 +48,24 @@ const {
   clearAllStudentsAttendance,
   removeStudentAttendanceBySubject,
   removeStudentAttendance,
+  getStudentByClass,
+  getStudentAssignments,
+  getAllAssignments,
+  getFeeDetails,
+  payfee,
+  createOrder,
+  // subjectList,
 } = require("../controllers/student_controller.js");
+
 const {
   subjectCreate,
-  classSubjects,
   deleteSubjectsByClass,
   getSubjectDetail,
   deleteSubject,
   freeSubjectList,
   allSubjects,
   deleteSubjects,
+  classSubjects,
 } = require("../controllers/subject-controller.js");
 const {
   teacherRegister,
@@ -63,7 +77,10 @@ const {
   deleteTeacher,
   updateTeacherSubject,
   teacherAttendance,
+  teacherPostAssignment,
+  teacherUploadFile,
 } = require("../controllers/teacher-controller.js");
+// const upload = require("../middleware/multer.js");
 
 // Admin
 router.post("/AdminReg", adminRegister);
@@ -81,6 +98,11 @@ router.post("/StudentLogin", studentLogIn);
 
 router.get("/Students/:id", getStudents);
 router.get("/Student/:id", getStudentDetail);
+router.get("/Student/getallassignment/:id", getAllAssignments);
+router.get("/Student/assignments/:id/:subjectId", getStudentAssignments);
+router.get("/Student/fees/:id", getFeeDetails);
+router.post("/Student/fees/pay", payfee);
+router.post("/Student/fees/create-order", createOrder);
 
 router.delete("/Students/:id", deleteStudents);
 router.delete("/StudentsClass/:id", deleteStudentsByClass);
@@ -101,10 +123,22 @@ router.put("/RemoveAllStudentsAtten/:id", clearAllStudentsAttendance);
 router.put("/RemoveStudentSubAtten/:id", removeStudentAttendanceBySubject);
 router.put("/RemoveStudentAtten/:id", removeStudentAttendance);
 
+// Students Attendance
+router.post("/StudentsAttendance", checkAndMarkAttendance);
+router.get("/attendance/:classId/:subjectId/:date", getAttendanceByDate);
+router.get("/percentage/:studentId/:subjectId", getAttendancePercentage);
+
 // Teacher
 
 router.post("/TeacherReg", teacherRegister);
 router.post("/TeacherLogin", teacherLogIn);
+router.post("/Teacher/assignment", teacherPostAssignment);
+const upload = require("../middleware/multer.js");
+router.post(
+  "/Teacher/uploadFile",
+  upload.single("assignmentFile"),
+  teacherUploadFile
+);
 
 router.get("/Teachers/:id", getTeachers);
 router.get("/Teacher/:id", getTeacherDetail);

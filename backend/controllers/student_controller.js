@@ -1,3 +1,4 @@
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const Student = require("../models/studentSchema.js");
 const Subject = require("../models/subjectSchema.js");
@@ -69,7 +70,6 @@ const studentLogIn = async (req, res) => {
 const getStudents = async (req, res) => {
   try {
     let students = await Student.find({ school: req.params.id }).populate(
-      "sclassName",
       "sclassName"
     );
     if (students.length > 0) {
@@ -100,6 +100,59 @@ const getStudentDetail = async (req, res) => {
     }
   } catch (err) {
     res.status(500).json(err);
+  }
+};
+
+const getStudentAssignments = async (req, res) => {
+  const { id, subjectId } = req.params;
+  try {
+    // Fetch the specific student with their assignments
+    const student = await Student.findById(id).select("assignments");
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    // Filter assignment by subjectId
+    const subjectAssignments = student.assignments.filter(
+      (assignment) => assignment.subjectId.toString() === subjectId
+    );
+    if (subjectAssignments.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No assignments found for the given subject." });
+    }
+
+    res.status(200).json({
+      message: "Assignments retrieved successfully.",
+      data: subjectAssignments,
+    });
+  } catch (error) {
+    console.error("Error retrieving assignments:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching assignments.",
+      error,
+    });
+  }
+};
+
+const getAllAssignments = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const student = await Student.findById(id).select("assignments");
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+    return res.status(200).json({
+      message: "All Assignments fetched successfully",
+      assignments: student.assignments,
+      totalAssignments: student.assignments?.length,
+    });
+  } catch (error) {
+    console.error("Error retrieving assignments:", error);
+    res.status(500).json({
+      message: "An error occurred while fetching assignments.",
+      error,
+    });
   }
 };
 
@@ -144,6 +197,7 @@ const updateStudent = async (req, res) => {
       const salt = await bcrypt.genSalt(10);
       req.body.password = await bcrypt.hash(req.body.password, salt);
     }
+    console.log("req.body: ", req.body);
     let result = await Student.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
@@ -285,11 +339,159 @@ const removeStudentAttendance = async (req, res) => {
   }
 };
 
+const getFeeDetails = async (req, res) => {
+  const studentId = req.params.id;
+  try {
+    const student = await Student.findById(studentId).select(
+      "fees name rollNum"
+    );
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    if (!student.fees || student.fees.length === 0) {
+      const currentYear = new Date().getFullYear();
+      const defaultFees = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ].map((month) => ({
+        month,
+        year: currentYear,
+        amount: 1000, // Default fee amount
+        isPaid: false,
+      }));
+
+      student.fees = defaultFees;
+
+      await student.save();
+    }
+
+    res.json({
+      student: student.name,
+      rollNum: student.rollNum,
+      fees: student.fees,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+const { RAZORPAY_ID_KEY, RAZORPAY_SECRET_KEY } = process.env;
+
+const razorpayInstance = new Razorpay({
+  key_id: RAZORPAY_ID_KEY,
+  key_secret: RAZORPAY_SECRET_KEY,
+});
+
+// Create Razorpay Order (To be called from the frontend)
+const createOrder = async (req, res) => {
+  const { studentId, month, amount } = req.body;
+
+  try {
+    // Find student and validate
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const feeIndex = student.fees.findIndex((fee) => fee.month === month);
+    if (feeIndex === -1) {
+      return res
+        .status(404)
+        .json({ message: "Fee record not found for the specified month" });
+    }
+
+    if (student.fees[feeIndex].isPaid) {
+      return res.status(400).json({ message: "Fee is already paid" });
+    }
+
+    // Create Razorpay order
+    const options = {
+      amount: amount * 100, // Amount in paise (₹1 = 100 paise)
+      currency: "INR",
+      receipt: `order-${studentId}-${month}`,
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    // console.log(order);
+
+    res.status(200).json({
+      message: "Order created successfully",
+      orderId: order.id,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error creating order", error });
+  }
+};
+
+const payfee = async (req, res) => {
+  const { studentId, month, paymentId, orderId, signature } = req.body;
+
+  try {
+    // Step 1: Find the student
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const feeIndex = student.fees.findIndex((fee) => fee.month === month);
+    if (feeIndex === -1) {
+      return res
+        .status(404)
+        .json({ message: "Fee record not found for the specified month" });
+    }
+
+    if (student.fees[feeIndex].isPaid) {
+      return res.status(400).json({ message: "Fee is already paid" });
+    }
+
+    // Step 2: Verify Razorpay payment
+    // console.log("RAZORPAY_KEY_SECRET: ", process.env.RAZORPAY_SECRET_KEY);
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET_KEY)
+      .update(orderId + "|" + paymentId)
+      .digest("hex");
+
+    if (generatedSignature !== signature) {
+      return res.status(400).json({ message: "Payment verification failed" });
+    }
+
+    // Step 3: Mark the fee as paid
+    student.fees[feeIndex].isPaid = true;
+    student.fees[feeIndex].paidDate = new Date();
+    await student.save();
+
+    res.status(200).json({
+      message: "Fee payment successful",
+      fee: student.fees[feeIndex],
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error processing payment", error });
+  }
+};
+
 module.exports = {
   studentRegister,
   studentLogIn,
   getStudents,
   getStudentDetail,
+  getAllAssignments,
+  getStudentAssignments,
   deleteStudents,
   deleteStudent,
   updateStudent,
@@ -301,4 +503,7 @@ module.exports = {
   clearAllStudentsAttendance,
   removeStudentAttendanceBySubject,
   removeStudentAttendance,
+  getFeeDetails,
+  payfee,
+  createOrder,
 };

@@ -14,7 +14,13 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import AnnouncementOutlinedIcon from "@mui/icons-material/AnnouncementOutlined";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import { useSelector } from "react-redux";
-import { AssignmentTurnedIn, List } from "@mui/icons-material";
+import {
+  AssignmentTurnedIn,
+  CompareOutlined,
+  List,
+  MarkEmailReadOutlined,
+  MeetingRoom,
+} from "@mui/icons-material";
 
 const TeacherSideBar = () => {
   const { currentUser } = useSelector((state) => state.user);

@@ -1,11 +1,20 @@
 const bcrypt = require("bcrypt");
+const nodemailer = require("nodemailer");
 const Teacher = require("../models/teacherSchema.js");
 const Subject = require("../models/subjectSchema.js");
 const Student = require("../models/studentSchema.js");
 
 const teacherRegister = async (req, res) => {
-  const { name, email, password, role, school, teachSubject, teachSclass } =
-    req.body;
+  const {
+    name,
+    email,
+    password,
+    appSpecPassword,
+    role,
+    school,
+    teachSubject,
+    teachSclass,
+  } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPass = await bcrypt.hash(password, salt);
@@ -14,6 +23,7 @@ const teacherRegister = async (req, res) => {
       name,
       email,
       password: hashedPass,
+      appSpecPassword,
       role,
       school,
       teachSubject,
@@ -28,6 +38,7 @@ const teacherRegister = async (req, res) => {
       let result = await teacher.save();
       await Subject.findByIdAndUpdate(teachSubject, { teacher: teacher._id }); // teachSubject is the id of the subject to which the teacher is assigned and it finds that subject with that id and update the teacher field of that subject to the newly made teacher's id
       result.password = undefined;
+      result.appSpecPassword = undefined;
       res.send(result);
     }
   } catch (err) {
@@ -262,6 +273,66 @@ const teacherUploadFile = async (req, res) => {
   res.status(200).json({ fileURL, message: "File uploaded successfully." });
 };
 
+const teacherSentComplain = async (req, res) => {
+  const { subject, description, studentId, teacherId } = req.body;
+
+  try {
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    const parentEmail = student.parentEmail;
+
+    if (!parentEmail) {
+      return res
+        .status(400)
+        .json({ message: "Parent email not found for the student." });
+    }
+
+    const teacher = await Teacher.findById(teacherId);
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    const teacherEmail = teacher.email;
+    const teacherPassword = teacher.appSpecPassword;
+
+    if (!teacherEmail || !teacherPassword) {
+      return res.status(400).json({
+        message: "Teacher's email credentials are not available.",
+      });
+    }
+
+    // Create a transporter for sending the email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: teacherEmail,
+        pass: teacherPassword,
+      },
+    });
+
+    // Email content
+    const mailOptions = {
+      from: teacherEmail, // Email sent from the teacher's email
+      to: parentEmail, // Parent's email
+      subject: `Complaint Regarding ${student.name}: ${subject}`,
+      text: `Dear Parent,\n\nA complaint has been raised regarding your child, ${student.name}:\n\nSubject: ${subject}\n\nDescription: ${description}\n\nPlease address this matter promptly.\n\nRegards,\n${teacher.name}`,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Complaint email sent successfully." });
+  } catch (error) {
+    console.error("Error sending complaint email:", error);
+    res.status(500).json({ message: "Failed to send complaint email." });
+  }
+};
+
 module.exports = {
   teacherRegister,
   teacherLogIn,
@@ -274,4 +345,5 @@ module.exports = {
   teacherAttendance,
   teacherPostAssignment,
   teacherUploadFile,
+  teacherSentComplain,
 };

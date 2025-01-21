@@ -79,6 +79,7 @@ const {
   teacherAttendance,
   teacherPostAssignment,
   teacherUploadFile,
+  teacherSentComplain,
 } = require("../controllers/teacher-controller.js");
 // const upload = require("../middleware/multer.js");
 
@@ -132,6 +133,7 @@ router.get("/percentage/:studentId/:subjectId", getAttendancePercentage);
 
 router.post("/TeacherReg", teacherRegister);
 router.post("/TeacherLogin", teacherLogIn);
+router.post("/Teacher/SendMail", teacherSentComplain);
 router.post("/Teacher/assignment", teacherPostAssignment);
 const upload = require("../middleware/multer.js");
 router.post(

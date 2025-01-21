@@ -60,6 +60,13 @@ const TeacherClassDetails = () => {
         >
           Provide Marks
         </Button>
+        <BlueButton
+          variant="contained"
+          sx={{ marginLeft: "8px" }}
+          onClick={() => navigate(`/Teacher/class/student/complain/${row.id}`)}
+        >
+          Student's Complain
+        </BlueButton>
       </>
     );
   };

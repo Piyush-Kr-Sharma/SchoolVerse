@@ -188,6 +188,19 @@ const LoginPage = ({ role }) => {
                     helperText={studentNameError && "Name is required"}
                     onChange={handleInputChange}
                   />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="parentEmail"
+                    label="Enter Parent's Email"
+                    name="parentEmail"
+                    autoComplete="email"
+                    type="email"
+                    error={emailError}
+                    helperText={emailError && "Parent's Email is required"}
+                    onChange={handleInputChange}
+                  />
                 </>
               ) : (
                 <TextField

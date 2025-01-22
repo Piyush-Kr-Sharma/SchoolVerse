@@ -7,6 +7,7 @@ const {
   adminRegister,
   adminLogIn,
   getAdminDetail,
+  adminFeeCollection,
 } = require("../controllers/admin-controller.js");
 const {
   checkAndMarkAttendance,
@@ -88,6 +89,7 @@ router.post("/AdminReg", adminRegister);
 router.post("/AdminLogin", adminLogIn);
 
 router.get("/Admin/:id", getAdminDetail);
+router.get("/Admin/feeCollection/:adminId", adminFeeCollection);
 // router.delete("/Admin/:id", deleteAdmin)
 
 // router.put("/Admin/:id", updateAdmin)

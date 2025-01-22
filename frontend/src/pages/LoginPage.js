@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import bgpic from "../assets/designlogin.jpg";
+// import bgpic from "../assets/designlogin.jpg";
 import { LightPurpleButton } from "../components/buttonStyles";
 import styled from "styled-components";
 import { loginUser } from "../redux/userRelated/userHandle";
@@ -188,7 +188,7 @@ const LoginPage = ({ role }) => {
                     helperText={studentNameError && "Name is required"}
                     onChange={handleInputChange}
                   />
-                  <TextField
+                  {/* <TextField
                     margin="normal"
                     required
                     fullWidth
@@ -200,7 +200,7 @@ const LoginPage = ({ role }) => {
                     error={emailError}
                     helperText={emailError && "Parent's Email is required"}
                     onChange={handleInputChange}
-                  />
+                  /> */}
                 </>
               ) : (
                 <TextField

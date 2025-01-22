@@ -112,6 +112,40 @@ const getAdminDetail = async (req, res) => {
   }
 };
 
+const adminFeeCollection = async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    // Fetch students associated with the admin's school
+    const students = await Student.find({ school: adminId });
+
+    // Check if students are found
+    if (students.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No students found for this admin's school" });
+    }
+
+    let totalCollections = 0;
+    students.forEach((student) => {
+      student.fees.forEach((fee) => {
+        if (fee.isPaid) {
+          totalCollections += fee.amount;
+        }
+      });
+    });
+
+    res.status(200).json({
+      totalCollections,
+      message: "Fee collection calculated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+};
+
 // const deleteAdmin = async (req, res) => {
 //     try {
 //         const result = await Admin.findByIdAndDelete(req.params.id)
@@ -148,4 +182,9 @@ const getAdminDetail = async (req, res) => {
 
 // module.exports = { adminRegister, adminLogIn, getAdminDetail, deleteAdmin, updateAdmin };
 
-module.exports = { adminRegister, adminLogIn, getAdminDetail };
+module.exports = {
+  adminRegister,
+  adminLogIn,
+  getAdminDetail,
+  adminFeeCollection,
+};

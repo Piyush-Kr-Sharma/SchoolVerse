@@ -6,6 +6,7 @@ const initialState = {
   error: null,
   response: null,
   status: "idle", // Renamed from "statestatus" for clarity
+  totalCollections: 0,
 };
 
 const feeSlice = createSlice({
@@ -44,6 +45,9 @@ const feeSlice = createSlice({
       state.error = null;
       state.status = "idle";
     },
+    setTotalFeeCollections: (state, action) => {
+      state.totalCollections = action.payload;
+    },
   },
 });
 
@@ -54,6 +58,7 @@ export const {
   getFailed,
   getError,
   resetFeeStatus,
+  setTotalFeeCollections,
 } = feeSlice.actions;
 
 export const feeReducer = feeSlice.reducer;

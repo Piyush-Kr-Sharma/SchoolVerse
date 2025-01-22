@@ -51,7 +51,7 @@ const TeacherMailForm = () => {
   return (
     <>
       <Typography variant="h3" align="center">
-        Send Mail to Student
+        Send Mail to Student's Parent
       </Typography>
       <Paper elevation={3} sx={{ padding: 4, maxWidth: 600, margin: "auto" }}>
         <Box component="form" onSubmit={handleSubmit} noValidate>

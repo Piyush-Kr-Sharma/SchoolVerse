@@ -5,6 +5,7 @@ import {
   updateFeeSuccess,
   getFailed,
   getError,
+  setTotalFeeCollections,
 } from "./feeSlice";
 
 // Fetch fee details of a student
@@ -90,3 +91,23 @@ export const verifyPayment =
       );
     }
   };
+
+export const fetchTotalFeeCollections = (adminId) => async (dispatch) => {
+  dispatch(getRequest());
+
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_BASE_URL}/Admin/feeCollection/${adminId}`
+    );
+
+    if (response.data.totalCollections >= 0) {
+      dispatch(setTotalFeeCollections(response.data.totalCollections));
+    } else {
+      throw new Error("Failed to retrieve total fee collections.");
+    }
+  } catch (error) {
+    dispatch(
+      getError(error.message || "Error fetching total fee collections.")
+    );
+  }
+};

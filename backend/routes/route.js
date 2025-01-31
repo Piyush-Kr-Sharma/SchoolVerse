@@ -1,7 +1,5 @@
 const router = require("express").Router();
-const multer = require("multer");
-
-// const { adminRegister, adminLogIn, deleteAdmin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
+const upload = require("../middleware/TeacherMulter.js");
 
 const {
   adminRegister,
@@ -49,13 +47,13 @@ const {
   clearAllStudentsAttendance,
   removeStudentAttendanceBySubject,
   removeStudentAttendance,
-  getStudentByClass,
   getStudentAssignments,
   getAllAssignments,
   getFeeDetails,
   payfee,
   createOrder,
-  // subjectList,
+  studentSubmitAssignment,
+  studentUploadFile,
 } = require("../controllers/student_controller.js");
 
 const {
@@ -81,7 +79,11 @@ const {
   teacherPostAssignment,
   teacherUploadFile,
   teacherSentComplain,
+  getAssignmentPostedByTeacher,
+  getSubmissionsOfAssignment,
 } = require("../controllers/teacher-controller.js");
+const uploadTeacher = require("../middleware/TeacherMulter.js");
+const uploadStudent = require("../middleware/StudentMulter.js");
 // const upload = require("../middleware/multer.js");
 
 // Admin
@@ -98,6 +100,13 @@ router.get("/Admin/feeCollection/:adminId", adminFeeCollection);
 
 router.post("/StudentReg", studentRegister);
 router.post("/StudentLogin", studentLogIn);
+
+router.post("/Student/submitAssignment", studentSubmitAssignment);
+router.post(
+  "/Student/uploadFile",
+  uploadStudent.single("submitAssignmentFile"),
+  studentUploadFile
+);
 
 router.get("/Students/:id", getStudents);
 router.get("/Student/:id", getStudentDetail);
@@ -137,15 +146,19 @@ router.post("/TeacherReg", teacherRegister);
 router.post("/TeacherLogin", teacherLogIn);
 router.post("/Teacher/SendMail", teacherSentComplain);
 router.post("/Teacher/assignment", teacherPostAssignment);
-const upload = require("../middleware/multer.js");
 router.post(
   "/Teacher/uploadFile",
-  upload.single("assignmentFile"),
+  uploadTeacher.single("assignmentFile"),
   teacherUploadFile
 );
 
 router.get("/Teachers/:id", getTeachers);
 router.get("/Teacher/:id", getTeacherDetail);
+router.get(
+  "/Teacher/getAssignments/:classId/:subjectId",
+  getAssignmentPostedByTeacher
+);
+router.get("/Teacher/getSubmissions/:assignmentId", getSubmissionsOfAssignment);
 
 router.delete("/Teachers/:id", deleteTeachers);
 router.delete("/TeachersClass/:id", deleteTeachersByClass);

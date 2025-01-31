@@ -2,6 +2,7 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const Student = require("../models/studentSchema.js");
 const Subject = require("../models/subjectSchema.js");
+const Assignment = require("../models/assignmentSchema.js");
 
 const studentRegister = async (req, res) => {
   try {
@@ -107,30 +108,89 @@ const getStudentAssignments = async (req, res) => {
   const { id, subjectId } = req.params;
   try {
     // Fetch the specific student with their assignments
-    const student = await Student.findById(id).select("assignments");
+    const student = await Student.findById(id);
     if (!student) {
       return res.status(404).json({ message: "Student not found." });
     }
 
-    // Filter assignment by subjectId
-    const subjectAssignments = student.assignments.filter(
-      (assignment) => assignment.subjectId.toString() === subjectId
-    );
-    if (subjectAssignments.length === 0) {
+    const classId = student.sclassName;
+    const assignments = await Assignment.find({
+      classId,
+      subjectId,
+    }).select("deadline description fileURL");
+
+    if (assignments.length === 0) {
       return res
         .status(404)
-        .json({ message: "No assignments found for the given subject." });
+        .json({ message: "No assignments found for this subject." });
     }
 
-    res.status(200).json({
-      message: "Assignments retrieved successfully.",
-      data: subjectAssignments,
-    });
+    // Return the assignments
+    res.status(200).json({ assignments });
   } catch (error) {
     console.error("Error retrieving assignments:", error);
     res.status(500).json({
       message: "An error occurred while fetching assignments.",
       error,
+    });
+  }
+};
+
+const studentUploadFile = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded." });
+  }
+  // Construct the file URL
+  const file = `${process.env.BASE_URL}/Student/uploadFile/${req.file.filename}`;
+  res.status(200).json({ file, message: "File uploaded successfully." });
+};
+
+const studentSubmitAssignment = async (req, res) => {
+  const { assignmentId, studentId, file, rollNum, name } = req.body;
+
+  try {
+    // Find the assignment by its ID
+    const assignment = await Assignment.findById(assignmentId);
+
+    if (!assignment) {
+      return res.status(404).json({
+        message: "Assignment not found.",
+      });
+    }
+
+    // Check if the student has already submitted
+    const existingSubmission = assignment.submissions.find(
+      (submission) => String(submission.studentId) === String(studentId)
+    );
+
+    if (existingSubmission) {
+      return res.status(400).json({
+        message: "You have already submitted this assignment.",
+      });
+    }
+
+    // Add the student's submission to the submissions array
+    const newSubmission = {
+      ...req.body,
+      studentId,
+      file,
+      submittedAt: new Date(),
+    };
+
+    assignment.submissions.push(newSubmission);
+
+    // Save the updated assignment
+    await assignment.save();
+
+    res.status(200).json({
+      message: "Assignment submitted successfully!",
+      submission: newSubmission,
+    });
+  } catch (error) {
+    console.error("Error submitting assignment:", error);
+    res.status(500).json({
+      message: "An error occurred while submitting the assignment.",
+      error: error.message,
     });
   }
 };
@@ -506,4 +566,6 @@ module.exports = {
   getFeeDetails,
   payfee,
   createOrder,
+  studentUploadFile,
+  studentSubmitAssignment,
 };

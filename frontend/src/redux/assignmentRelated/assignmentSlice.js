@@ -1,12 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  assignments: [], // Stores assignments fetched for a student
+  assignments: [], // Stores assignments fetched for a teacher or student
+  submissions: [], // Stores submissions fetched for a specific assignment
   loading: false,
   error: null,
-  response: null, // Response from posting an assignment
+  response: null,
   statestatus: "idle",
-  uploadStatus: null, // New state for file upload status
+  uploadStatus: null,
   totalAssignments: 0,
 };
 
@@ -40,6 +41,21 @@ const assignmentSlice = createSlice({
       state.error = action.payload;
       state.loading = false;
     },
+    submitAssignmentSuccess: (state, action) => {
+      state.response = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
+    uploadAssignmentSuccess: (state) => {
+      state.uploadStatus = "success";
+      state.loading = false;
+      state.error = null;
+    },
+    uploadAssignmentFailure: (state, action) => {
+      state.uploadStatus = "failed";
+      state.error = action.payload;
+      state.loading = false;
+    },
     getFailed: (state, action) => {
       state.response = action.payload;
       state.loading = false;
@@ -61,6 +77,11 @@ const assignmentSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    getSubmissionsSuccess: (state, action) => {
+      state.submissions = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
   },
 });
 
@@ -74,6 +95,10 @@ export const {
   getError,
   resetAssignmentState,
   getTotalAssignments,
+  submitAssignmentSuccess,
+  uploadAssignmentSuccess,
+  uploadAssignmentFailure,
+  getSubmissionsSuccess,
 } = assignmentSlice.actions;
 
 export const assignmentReducer = assignmentSlice.reducer;

@@ -3,11 +3,13 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const path = require("path");
+const multer = require("multer");
 
 const app = express();
 const Routes = require("./routes/route.js");
 
-const PORT = process.env.PORT || 5000;
+// console.log(process.env.PORT);
+const PORT = 5000;
 
 dotenv.config();
 
@@ -31,8 +33,15 @@ mongoose
 
 app.use("/", Routes);
 
-// Serve static files for downloads
-app.use("/Teacher/uploadFile", express.static(path.join(__dirname, "uploads")));
+// // // Serve static files for downloads
+app.use(
+  "/Teacher/uploadFile",
+  express.static(path.join(__dirname, "uploads/teachers"))
+);
+app.use(
+  "/Student/uploadFile",
+  express.static(path.join(__dirname, "uploads/students"))
+);
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     console.log(err.message);

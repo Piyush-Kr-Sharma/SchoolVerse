@@ -61,25 +61,25 @@ const studentSchema = new mongoose.Schema({
       },
     },
   ],
-  assignments: [
-    {
-      deadline: {
-        type: Date,
-        required: true,
-      },
-      description: {
-        type: String,
-        required: true,
-      },
-      file: {
-        type: String,
-      },
-      subjectId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-      },
-    },
-  ],
+  // assignments: [
+  //   {
+  //     deadline: {
+  //       type: Date,
+  //       required: true,
+  //     },
+  //     description: {
+  //       type: String,
+  //       required: true,
+  //     },
+  //     file: {
+  //       type: String,
+  //     },
+  //     subjectId: {
+  //       type: mongoose.Schema.Types.ObjectId,
+  //       required: true,
+  //     },
+  //   },
+  // ],
   fees: [
     {
       month: {

@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const Teacher = require("../models/teacherSchema.js");
 const Subject = require("../models/subjectSchema.js");
 const Student = require("../models/studentSchema.js");
+const Assignment = require("../models/assignmentSchema.js");
 
 const teacherRegister = async (req, res) => {
   const {
@@ -225,35 +226,36 @@ const teacherAttendance = async (req, res) => {
 
 const teacherPostAssignment = async (req, res) => {
   const { deadline, description, fileURL, subjectId, classId } = req.body;
+
   try {
-    const students = await Student.find({ sclassName: classId });
-    if (!students || students.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No students found for the given class." });
+    const existingAssignment = await Assignment.findOne({
+      deadline,
+      description,
+      fileURL,
+      subjectId,
+      classId,
+    });
+
+    if (existingAssignment) {
+      return res.status(400).json({
+        message: "An assignment with the same details already exists.",
+      });
     }
 
-    // Prepare the assignment object
-    const assignment = {
-      deadline: new Date(deadline),
+    // Create a new assignment
+    const newAssignment = new Assignment({
+      deadline,
       description,
-      file: fileURL,
+      fileURL,
       subjectId,
-    };
+      classId,
+    });
 
-    // Add the assignment to each student's assignment field
-    const bulkOperations = students.map((student) => ({
-      updateOne: {
-        filter: { _id: student._id },
-        update: { $push: { assignments: assignment } },
-      },
-    }));
+    await newAssignment.save();
 
-    await Student.bulkWrite(bulkOperations);
-
-    res.status(200).json({
-      message: "Assignment added successfully to all students.",
-      assignment,
+    res.status(201).json({
+      message: "Assignment posted successfully!",
+      assignment: newAssignment,
     });
   } catch (error) {
     console.error("Error adding assignment:", error);
@@ -271,6 +273,51 @@ const teacherUploadFile = async (req, res) => {
   // Construct the file URL
   const fileURL = `${process.env.BASE_URL}/Teacher/uploadFile/${req.file.filename}`;
   res.status(200).json({ fileURL, message: "File uploaded successfully." });
+};
+
+const getAssignmentPostedByTeacher = async (req, res) => {
+  const { classId, subjectId } = req.params;
+
+  if (!classId || !subjectId) {
+    return res
+      .status(400)
+      .json({ message: "classId and subjectId are required." });
+  }
+
+  try {
+    const assignments = await Assignment.find({ classId, subjectId }).sort({
+      createdAt: -1,
+    }); // Sort by most recent
+    res.status(200).json(assignments);
+  } catch (error) {
+    console.error("Error fetching assignments:", error);
+    res.status(500).json({ message: "Error fetching assignments." });
+  }
+};
+
+const getSubmissionsOfAssignment = async (req, res) => {
+  const { assignmentId } = req.params; // Expecting assignmentId as a route parameter
+
+  if (!assignmentId) {
+    return res.status(400).json({ message: "assignmentId is required." });
+  }
+
+  try {
+    const assignment = await Assignment.findById(assignmentId).populate(
+      "submissions.studentId", // Populate studentId if it's a reference
+      "name rollNo" // Only include name and rollNo fields
+    );
+
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found." });
+    }
+
+    // Return the submissions array
+    res.status(200).json(assignment.submissions);
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    res.status(500).json({ message: "Error fetching submissions." });
+  }
 };
 
 const teacherSentComplain = async (req, res) => {
@@ -346,4 +393,6 @@ module.exports = {
   teacherPostAssignment,
   teacherUploadFile,
   teacherSentComplain,
+  getAssignmentPostedByTeacher,
+  getSubmissionsOfAssignment,
 };

@@ -198,14 +198,25 @@ const studentSubmitAssignment = async (req, res) => {
 const getAllAssignments = async (req, res) => {
   const { id } = req.params;
   try {
-    const student = await Student.findById(id).select("assignments");
+    const student = await Student.findById(id);
     if (!student) {
       return res.status(404).json({ message: "Student not found." });
     }
+
+    const classId = student.sclassName;
+    if (!classId) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+
+    // Fetch all assignments for the class
+    const assignments = await Assignment.find({ classId }).select(
+      "deadline description fileURL"
+    );
+
     return res.status(200).json({
       message: "All Assignments fetched successfully",
-      assignments: student.assignments,
-      totalAssignments: student.assignments?.length,
+      assignments,
+      totalAssignments: assignments.length, // Ensuring a valid length count
     });
   } catch (error) {
     console.error("Error retrieving assignments:", error);

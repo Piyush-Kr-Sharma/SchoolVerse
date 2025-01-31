@@ -27,7 +27,7 @@ const StudentHomePage = () => {
 
   useEffect(() => {
     dispatch(getUserDetails(currentUser._id, "Student"));
-    dispatch(getSubjectList(classID, "ClassSubjects"));
+    dispatch(getSubjectList("ClassSubjects", classID));
     dispatch(getAllAssignments(currentUser._id));
   }, [dispatch, currentUser._id, classID]);
 

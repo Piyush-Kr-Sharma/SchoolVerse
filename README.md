@@ -47,7 +47,7 @@ npm run dev
 
 
 ### Admin Dashboard
-Admin can create/delete new student, new class, new teachers and he/she can also see how much fee collection has been made in an acedamic year.
+Admin can create/delete new student, class, teachers and he/she can also see how much fee collection has been made in an acedamic year.
 
 ![Screenshot (62)](https://github.com/Piyush-Kr-Sharma/SchoolVerse/blob/main/ScreenShots/Screenshot%202025-02-01%20001255.png)
 

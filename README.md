@@ -41,6 +41,11 @@ npm run dev
 
 ```
 
+## 🔗 Live Demo
+
+[Click here to view the deployed app](https://school-verse-frontend.vercel.app/)
+
+
 ### Admin Dashboard
 Admin can create/delete new student, new class, new teachers and he/she can also see how much fee collection has been made in an acedamic year.
 
